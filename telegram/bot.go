@@ -4,7 +4,6 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/joho/godotenv"
 	"github.com/kelseyhightower/envconfig"
-	"log"
 	"math"
 	"os"
 	"sailerBot/logger"
@@ -153,7 +152,7 @@ var ShippingProducts = map[string]float64{}
 func InitShippingProducts() {
 	err := godotenv.Load("config/telegram/shippingPrices/shippingPrices.env") // Укажите путь к вашему .env файлу
 	if err != nil {
-		log.Fatalf("Error loading .env file: %v", err)
+		logger.Error.Println("Error loading .env file: %v", err)
 	}
 
 	// Пример заполнения карты значениями из env
@@ -170,7 +169,7 @@ func getEnvFloat(key string) float64 {
 	valStr := os.Getenv(key)
 	val, err := strconv.ParseFloat(valStr, 64)
 	if err != nil {
-		log.Printf("Error parsing env variable %s: %v", key, err)
+		logger.Error.Printf("Error parsing env variable %s: %v", key, err)
 		return 0
 	}
 	return val
