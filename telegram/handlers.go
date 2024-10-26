@@ -325,6 +325,7 @@ func readFromCart(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 	allDataFromCart, err := sheet.ReadCart(message.Chat.ID)
 	if err != nil {
 		logger.Error.Println(err)
+		return
 	}
 	allProductsText := ""
 	allCartPrice := 0.0
@@ -332,7 +333,7 @@ func readFromCart(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 	linkList := allDataFromCart["productLink"]
 	sizeList := allDataFromCart["productSize"]
 	if priceList != nil && linkList != nil && sizeList != nil {
-		for idx, _ := range priceList {
+		for idx := range priceList {
 			allProductsText += fmt.Sprintf("№: %d\nЦена: %s\nСсылка: %s\nРазмер и Цвет: %s\n------------------------------\n", idx, priceList[idx], linkList[idx], sizeList[idx])
 			floatValue, _ := strconv.ParseFloat(priceList[idx], 64)
 			allCartPrice += floatValue
@@ -378,6 +379,7 @@ func addToCart(bot *tgbotapi.BotAPI, message *tgbotapi.Message) {
 		err = sheet.AddToCart(message.Chat.ID, price, link, size)
 		if err != nil {
 			logger.Error.Println(err)
+			return
 		}
 	}
 }
@@ -451,31 +453,36 @@ func gotoPayment(bot *tgbotapi.BotAPI, message *tgbotapi.Message, context *UserC
 	}
 }
 func paymentMessage(bot *tgbotapi.BotAPI, message *tgbotapi.Message, context *UserContext) {
-	paymentPath := "config/payment/payment.env"
-	paymentData := loadPaymentENV(paymentPath)
+	//paymentPath := "config/payment/payment.env"
+	//paymentData := loadPaymentENV(paymentPath)
+
 	token, err := generateOrderKey("*", 4) // Генерируем ключ длиной 4 символа для каждой части
 	if err != nil {
 		logger.Error.Println("Error:", err)
 		somethingWentWrong(bot, message)
 	}
+
 	name, err := getUserData(message.Chat.ID, "userFIO")
 	if err != nil {
 		logger.Error.Println("Error:", err)
 	}
+
 	number, err := getUserData(message.Chat.ID, "userPhoneNumber")
 	if err != nil {
 		logger.Error.Println("Error:", err)
 	}
+
 	address, err := getUserData(message.Chat.ID, "userAddress")
 	if err != nil {
 		logger.Error.Println("Error:", err)
 	}
+	payData := loadPaymentDataJSON()
 	text := fmt.Sprintf("Данные для отправки:\nФИО: %s\nАдресс: %s\nНомер телефона: %s\n\n📦Доставка по РФ оплачивается отдельно напрямую СДЭКу (≈500₽)\n\n"+
 		"⚠️Выкуп товара происходит в течении 24 часов после оплаты. \nВ случае если при выкупе заказа изменится цена , с вами свяжется менеджер\n\n"+
 		"✨Это ваш уникальный номер заказа, сохраните его:\n%s\n\nДанные для оплаты:\n\n"+
 		"💳СБЕР- %s\n\n🎫Тинькофф %s\n\n"+
 		"📝Произведя оплату Вы соглашаетесь с корректностью данных и характеристик указанного товара"+
-		"\n\nОплатите и нажмите кнопку Подтвердить оплату ✅", name, address, number, token, paymentData.Sber, paymentData.Tinkoff)
+		"\n\nОплатите и нажмите кнопку Подтвердить оплату ✅", name, address, number, token, payData.Sber, payData.Tinkoff)
 	msg := tgbotapi.NewMessage(message.Chat.ID, text)
 	msg.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Подтвердить оплату ✅", "approvePayment")),
